@@ -1,158 +1,91 @@
 public class DoublyLinkedList<E> {
-
-    private static class Node<E> {
-        private E element;
-        private Node<E> prev;
-        private Node<E> next;
-
-        public Node(E e, Node<E> p, Node<E> n) {
-            element = e;
-            prev = p;
-            next = n;
-        }
-
-        public E getElement() {
-            return element;
-        }
-
-        public Node<E> getNext() {
-            return next;
-        }
-
-        public Node<E> getPrev() {
-            return prev;
-        }
-
-        public void setNext(Node<E> n) {
-            next = n;
-        }
-
-        public void setPrev(Node<E> p) {
-            prev = p;
-        }
-    }
-
-    private Node<E> header;
-    private Node<E> trailer;
-    private int size = 0;
+    private Node header;  // Sentinel node at the beginning
+    private Node trailer; // Sentinel node at the end
+    private int size;
 
     public DoublyLinkedList() {
-        header = new Node<>(null, null, null);
-        trailer = new Node<>(null, header, null);
-        header.setNext(trailer);
+        header = new Node(null, null, null);
+        trailer = new Node(null, header, null);
+        header.next = trailer;
+        size = 0;
     }
 
-    public int size() {
-        return size;
+    private class Node {
+        E element;
+        Node next;
+        Node prev;
+
+        Node(E element, Node prev, Node next) {
+            this.element = element;
+            this.prev = prev;
+            this.next = next;
+        }
+    }
+
+    public void addFirst(E element) {
+        addBetween(element, header, header.next);
+    }
+
+    public void addLast(E element) {
+        addBetween(element, trailer.prev, trailer);
+    }
+
+    private void addBetween(E element, Node predecessor, Node successor) {
+        Node newest = new Node(element, predecessor, successor);
+        predecessor.next = newest;
+        successor.prev = newest;
+        size++;
+    }
+
+    public E first() {
+        if (isEmpty()) return null;
+        return header.next.element;
+    }
+
+    public E last() {
+        if (isEmpty()) return null;
+        return trailer.prev.element;
     }
 
     public boolean isEmpty() {
         return size == 0;
     }
 
-    public E first() {
-        if (isEmpty()) {
-            return null;
-        }
-        return header.getNext().getElement();
-    }
-
-    public E last() {
-        if (isEmpty()) {
-            return null;
-        }
-        return trailer.getPrev().getElement();
-    }
-
-    public void addFirst(E e) {
-        addBetween(e, header, header.getNext());
-    }
-
-    public void addLast(E e) {
-        addBetween(e, trailer.getPrev(), trailer);
-    }
-
-    public E removeFirst() {
-        if (isEmpty()) {
-            return null;
-        }
-        return remove(header.getNext());
-    }
-
-    public E removeLast() {
-        if (isEmpty()) {
-            return null;
-        }
-        return remove(trailer.getPrev());
-    }
-
-    private void addBetween(E e, Node<E> predecessor, Node<E> successor) {
-        Node<E> newest = new Node<>(e, predecessor, successor);
-        predecessor.setNext(newest);
-        successor.setPrev(newest);
-        size++;
-    }
-
-    private E remove(Node<E> node) {
-        Node<E> predecessor = node.getPrev();
-        Node<E> successor = node.getNext();
-
-        predecessor.setNext(successor);
-        successor.setPrev(predecessor);
-        size--;
-        return node.getElement();
-    }
-
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        Node<E> current = header.getNext();
+        Node current = header.next;
         while (current != trailer) {
-            sb.append(current.getElement());
-            sb.append(" ");
-            current = current.getNext();
+            sb.append(current.element).append(" ");
+            current = current.next;
         }
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     public void group() {
-        // this method is implemented by moving all the null nodes to the front of the
-        // list
-        Node<E> current = header.getNext();
-        Node<E> nullTail = header;
+        if (size <= 1) return;
+
+        Node current = header.next;
+        Node lastNull = header;
 
         while (current != trailer) {
-            Node<E> next = current.getNext();
-            // it is important to get the next node before we potentially move the current
-            // node
+            Node nextNode = current.next;
 
-            if (current.getElement() == null) {
+            if (current.element == null) {
+                // Remove current from its position
+                current.prev.next = current.next;
+                current.next.prev = current.prev;
 
-                // If this null node is not already directly
-                // after the previous null node, move it there
-                if (current.getPrev() != nullTail) {
+                // Insert after lastNull
+                current.prev = lastNull;
+                current.next = lastNull.next;
+                lastNull.next.prev = current;
+                lastNull.next = current;
 
-                    // Remove current from its existing position
-                    Node<E> predecessor = current.getPrev();
-                    Node<E> successor = current.getNext();
-
-                    predecessor.setNext(successor);
-                    successor.setPrev(predecessor);
-
-                    // Insert current immediately after nullTail
-                    Node<E> afterNullTail = nullTail.getNext();
-
-                    nullTail.setNext(current);
-                    current.setPrev(nullTail);
-
-                    current.setNext(afterNullTail);
-                    afterNullTail.setPrev(current);
-                }
-
-                // current is now the last null node at the front
-                nullTail = current;
+                lastNull = current;
             }
 
-            current = next;
+            current = nextNode;
         }
     }
 }
